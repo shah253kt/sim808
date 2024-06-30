@@ -1,0 +1,25 @@
+{
+    "name": "SIM808",
+    "version": "1.1.1",
+    "description": "Handles communication and communication of SIM808 module.",
+    "keywords": "sim808,callback,at command",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/shah253kt/sim808"
+    },
+    "authors": [
+        {
+            "name": "Ahmad Shahril",
+            "url": "https://github.com/shah253kt",
+            "maintainer": true
+        }
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/shah253kt/sim808",
+    "frameworks": "*",
+    "platforms": "*",
+    "dependencies":
+    {
+        "nickgammon/Regexp": "^0.1.0"
+    }
+}

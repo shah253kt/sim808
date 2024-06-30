@@ -29,17 +29,27 @@ public:
     int available();
     int read();
 
+    bool init();
+    void powerCycle(uint8_t pin);
+    void reset(uint8_t pin);
+
+    // GSM
+    bool setSmsTextMode();
+    bool sendSms(char *phoneNumber, char *message);
+
+    // GPS
     bool enableGps(bool enable);
     bool setGpsResetMode(GpsResetMode resetMode);
     GpsLocationInfo getGpsLocationInfo();
     void printGpsLocationInfo(const GpsLocationInfo &locationInfo, Stream &stream);
+    GpsStatus getGpsStatus();
 
 private:
     Stream *m_stream;
     char *m_response;
     uint8_t m_currentResponseIndex;
 
-    bool sendCommandExpectingOkResponse(char *msg);
+    bool sendCommandExpectingResponse(char *msg, const char *response = "OK");
     void resetResponse();
     bool isResponseFull();
     void clearBuffer();

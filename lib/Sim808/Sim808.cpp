@@ -7,7 +7,7 @@
 
 namespace
 {
-    constexpr auto COMMAND_LENGTH = 15;
+    constexpr auto COMMAND_LENGTH = 20;
     constexpr auto RESPONSE_LENGTH = 110;
     constexpr auto RESPONSE_TIMEOUT_MS = 3000;
     constexpr auto UPDATE_TIMEOUT_MS = 100;
@@ -58,11 +58,56 @@ int Sim808::read()
     return m_stream->read();
 }
 
+bool Sim808::init()
+{
+    char command[COMMAND_LENGTH];
+    strcpy(command, "AT\n");
+    return sendCommandExpectingResponse(command);
+}
+
+void Sim808::powerCycle(uint8_t pin)
+{
+    digitalWrite(pin, LOW);
+    delay(1000);
+    digitalWrite(pin, HIGH);
+    delay(1000);
+}
+
+void Sim808::reset(uint8_t pin)
+{
+    digitalWrite(pin, LOW);
+    delay(1000);
+    digitalWrite(pin, HIGH);
+    delay(3000);
+}
+
+bool Sim808::setSmsTextMode()
+{
+    char command[COMMAND_LENGTH];
+    strcpy(command, "AT+CMGF=1\n");
+    return sendCommandExpectingResponse(command);
+}
+
+bool Sim808::sendSms(char *phoneNumber, char *message)
+{
+    if (!setSmsTextMode())
+    {
+        return false;
+    }
+
+    m_stream->print("AT+CMGS=");
+    m_stream->print(phoneNumber);
+    m_stream->print('\r');
+    m_stream->print(message);
+    m_stream->print('\x1A'); // Ctrl-Z
+    return true;
+}
+
 bool Sim808::enableGps(const bool enable)
 {
     char command[COMMAND_LENGTH];
     sprintf(command, "AT+CGPSPWR=%d\n", enable ? 1 : 0);
-    return sendCommandExpectingOkResponse(command);
+    return sendCommandExpectingResponse(command);
 }
 
 bool Sim808::setGpsResetMode(Sim808::GpsResetMode resetMode)
@@ -95,7 +140,7 @@ bool Sim808::setGpsResetMode(Sim808::GpsResetMode resetMode)
 
     char command[COMMAND_LENGTH];
     sprintf(command, "AT+CGPSRST=%d\n", resetModeValue);
-    return sendCommandExpectingOkResponse(command);
+    return sendCommandExpectingResponse(command);
 }
 
 GpsLocationInfo Sim808::getGpsLocationInfo()
@@ -104,7 +149,7 @@ GpsLocationInfo Sim808::getGpsLocationInfo()
     char command[COMMAND_LENGTH];
     strcpy(command, "AT+CGPSINF=0\n");
 
-    if (sendCommandExpectingOkResponse(command))
+    if (sendCommandExpectingResponse(command))
     {
         static MatchState ms;
         ms.Target(m_response);
@@ -153,7 +198,36 @@ void Sim808::printGpsLocationInfo(const GpsLocationInfo &locationInfo, Stream &s
     stream.println(F("==============================================="));
 }
 
-bool Sim808::sendCommandExpectingOkResponse(char *msg)
+Sim808::GpsStatus Sim808::getGpsStatus()
+{
+    GpsLocationInfo locationInfo;
+    char command[COMMAND_LENGTH];
+    strcpy(command, "AT+CGPSSTATUS?\n");
+
+    if (sendCommandExpectingResponse(command))
+    {
+        if (strstr(m_response, "Location Unknown") != nullptr)
+        {
+            return Sim808::GpsStatus::Unknown;
+        }
+        else if (strstr(m_response, "Location Not Fix") != nullptr)
+        {
+            return Sim808::GpsStatus::NotFix;
+        }
+        else if (strstr(m_response, "Location 2D Fix") != nullptr)
+        {
+            return Sim808::GpsStatus::Fix2D;
+        }
+        else if (strstr(m_response, "Location 3D Fix") != nullptr)
+        {
+            return Sim808::GpsStatus::Fix3D;
+        }
+    }
+
+    return Sim808::GpsStatus::Unknown;
+}
+
+bool Sim808::sendCommandExpectingResponse(char *msg, const char *response)
 {
     clearBuffer();
     resetResponse();
@@ -178,7 +252,7 @@ bool Sim808::sendCommandExpectingOkResponse(char *msg)
         m_response[m_currentResponseIndex++] = read();
         m_response[m_currentResponseIndex] = '\0';
 
-        if (strstr(m_response, "OK") != nullptr)
+        if (strstr(m_response, response) != nullptr)
         {
             receivedOkResponse = true;
             break;

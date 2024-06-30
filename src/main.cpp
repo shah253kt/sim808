@@ -1,18 +1,23 @@
+#include "Sim808.h"
+#include "GpsLocationInfo.h"
+
 #include <Arduino.h>
 
-// put function declarations here:
-int myFunction(int, int);
+Sim808 gsm(Serial3);
 
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+void setup()
+{
+    Serial.begin(115200);
+    Serial3.begin(9600);
+
+    if (!gsm.enableGps(true))
+    {
+        Serial.println(F("GPS cannot be enabled."));
+    }
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+void loop()
+{
+    gsm.printGpsLocationInfo(gsm.getGpsLocationInfo(), Serial);
+    delay(3000);
 }

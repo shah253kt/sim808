@@ -3,43 +3,26 @@
 
 #include <Arduino.h>
 
-Sim808 gsm(Serial3);
-
 constexpr auto POWER = 2;
 constexpr auto RESET = 3;
 constexpr auto STATUS = 4;
+
+Sim808 gsm(Serial3, RESET, POWER, STATUS);
+bool gpsEnabled = false;
 
 void setup()
 {
     Serial.begin(115200);
     Serial3.begin(9600);
 
-    Serial.println("Resetting...");
-
-    pinMode(RESET, OUTPUT);
-    pinMode(POWER, OUTPUT);
-    pinMode(STATUS, INPUT);
-
-    gsm.reset(RESET);
-    gsm.powerCycle(POWER);
-
-    delay(3000);
-
     Serial.println("Initializing...");
-    const auto beginInitializationAt = millis();
-    auto initialized = false;
-
-    while (millis() - beginInitializationAt < 3000)
-    {
-        initialized = gsm.init();
-    }
-
-    if (!initialized)
+    if (!gsm.init())
     {
         Serial.println(F("Failed to initialize GSM"));
     }
 
-    if (!gsm.enableGps(true))
+    gpsEnabled = gsm.enableGps(true);
+    if (!gpsEnabled)
     {
         Serial.println(F("Failed to enable GPS."));
     }
@@ -49,19 +32,31 @@ void setup()
 
 void loop()
 {
+    gsm.keepAlive();
+
+    if (gsm.isAlive() && !gpsEnabled)
+    {
+        gpsEnabled = gsm.enableGps(true);
+    }
+
     if (Serial.available())
     {
-        Serial3.write(Serial.read());
-        // char c = Serial.read();
+        // Serial3.write(Serial.read());
+        char c = Serial.read();
 
-        // switch (c)
-        // {
-        // case 's':
-        // {
-        //     gsm.sendSms("+60123456789", "Hello!");
-        //     break;
-        // }
-        // }
+        switch (c)
+        {
+        case 's':
+        {
+            if (!gsm.isAlive())
+            {
+                break;
+            }
+
+            gsm.sendSms("+60123456789", "Hello!");
+            break;
+        }
+        }
     }
 
     if (Serial3.available())

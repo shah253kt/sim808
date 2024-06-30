@@ -10,7 +10,7 @@ namespace
     constexpr auto COMMAND_LENGTH = 20;
     constexpr auto RESPONSE_LENGTH = 110;
     constexpr auto RESPONSE_TIMEOUT_MS = 3000;
-    constexpr auto UPDATE_TIMEOUT_MS = 100;
+    constexpr auto POWER_CYCLE_INTERVAL_MS = 3000;
 }
 
 namespace Regex
@@ -31,11 +31,17 @@ namespace ResponseIndex
     constexpr auto COURSE = 8;
 }
 
-Sim808::Sim808(Stream &stream)
+Sim808::Sim808(Stream &stream, uint8_t resetPin, uint8_t powerPin, uint8_t statusPin)
     : m_stream{&stream},
       m_response{new char[RESPONSE_LENGTH]},
-      m_currentResponseIndex{0}
+      m_currentResponseIndex{0},
+      m_resetPin{resetPin},
+      m_powerPin{powerPin},
+      m_statusPin{statusPin}
 {
+    pinMode(m_resetPin, OUTPUT);
+    pinMode(m_powerPin, OUTPUT);
+    pinMode(m_statusPin, INPUT);
 }
 
 Sim808::~Sim808()
@@ -60,25 +66,61 @@ int Sim808::read()
 
 bool Sim808::init()
 {
+    if (m_resetPin != Sim808Constants::INVALID_PIN && m_powerPin != Sim808Constants::INVALID_PIN && m_statusPin != Sim808Constants::INVALID_PIN)
+    {
+        auto tries = 0;
+        digitalWrite(m_resetPin, LOW);
+        delay(1000);
+        digitalWrite(m_resetPin, HIGH);
+
+        while (tries++ < 2 && digitalRead(m_statusPin) == LOW)
+        {
+            digitalWrite(m_powerPin, LOW);
+            delay(1000);
+            digitalWrite(m_powerPin, HIGH);
+            delay(1000);
+            digitalWrite(m_powerPin, LOW);
+            delay(3000);
+        }
+    }
+
     char command[COMMAND_LENGTH];
     strcpy(command, "AT\n");
     return sendCommandExpectingResponse(command);
 }
 
-void Sim808::powerCycle(uint8_t pin)
+bool Sim808::isAlive()
 {
-    digitalWrite(pin, LOW);
-    delay(1000);
-    digitalWrite(pin, HIGH);
-    delay(1000);
+    if (m_statusPin == Sim808Constants::INVALID_PIN)
+    {
+        return true;
+    }
+
+    return digitalRead(m_statusPin) == HIGH;
 }
 
-void Sim808::reset(uint8_t pin)
+void Sim808::keepAlive()
 {
-    digitalWrite(pin, LOW);
-    delay(1000);
-    digitalWrite(pin, HIGH);
-    delay(3000);
+    if (m_resetPin == Sim808Constants::INVALID_PIN || m_powerPin == Sim808Constants::INVALID_PIN || m_statusPin == Sim808Constants::INVALID_PIN)
+    {
+        return;
+    }
+
+    if (digitalRead(m_statusPin) == HIGH)
+    {
+        return;
+    }
+
+    static auto lastPowerCycleState = false;
+    static auto lastPowerCycleChangedAt = millis();
+
+    digitalWrite(m_powerPin, lastPowerCycleState);
+
+    if (millis() - lastPowerCycleChangedAt >= POWER_CYCLE_INTERVAL_MS)
+    {
+        lastPowerCycleChangedAt = millis();
+        lastPowerCycleState = !lastPowerCycleState;
+    }
 }
 
 bool Sim808::setSmsTextMode()

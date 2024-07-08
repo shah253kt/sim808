@@ -38,6 +38,8 @@ public:
     int read();
 
     bool init();
+    void reset();
+    void powerCycle();
     bool isAlive();
     void keepAlive();
 
@@ -46,6 +48,7 @@ public:
     bool sendSms(char *phoneNumber, char *message);
 
     // GPS
+    bool isGpsEnabled();
     bool enableGps(bool enable);
     bool setGpsResetMode(GpsResetMode resetMode);
     GpsLocationInfo getGpsLocationInfo();

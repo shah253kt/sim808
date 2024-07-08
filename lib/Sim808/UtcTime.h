@@ -30,7 +30,6 @@ struct UtcTime
 
     void parse(char *utcTime)
     {
-
         if (strlen(utcTime) != strlen(UTC_TIME_FORMAT))
         {
             return;

@@ -8,7 +8,6 @@ constexpr auto RESET = 3;
 constexpr auto STATUS = 4;
 
 Sim808 gsm(Serial3, RESET, POWER, STATUS);
-bool gpsEnabled = false;
 
 void setup()
 {
@@ -21,8 +20,7 @@ void setup()
         Serial.println(F("Failed to initialize GSM"));
     }
 
-    gpsEnabled = gsm.enableGps(true);
-    if (!gpsEnabled)
+    if (!gsm.enableGps(true))
     {
         Serial.println(F("Failed to enable GPS."));
     }
@@ -32,31 +30,26 @@ void setup()
 
 void loop()
 {
-    gsm.keepAlive();
-
-    if (gsm.isAlive() && !gpsEnabled)
-    {
-        gpsEnabled = gsm.enableGps(true);
-    }
+    // gsm.keepAlive();
 
     if (Serial.available())
     {
-        // Serial3.write(Serial.read());
-        char c = Serial.read();
+        Serial3.write(Serial.read());
+        // char c = Serial.read();
 
-        switch (c)
-        {
-        case 's':
-        {
-            if (!gsm.isAlive())
-            {
-                break;
-            }
+        // switch (c)
+        // {
+        // case 's':
+        // {
+        //     if (!gsm.isAlive())
+        //     {
+        //         break;
+        //     }
 
-            gsm.sendSms("+60123456789", "Hello!");
-            break;
-        }
-        }
+        //     gsm.sendSms("+60123456789", "Hello!");
+        //     break;
+        // }
+        // }
     }
 
     if (Serial3.available())
@@ -68,10 +61,21 @@ void loop()
 
     if (millis() - lastGpsRequestedAt >= 3000)
     {
+        const auto gpsPowerEnabled = gsm.isGpsEnabled();
+        Serial.print(F("Is GPS power enabled? "));
+        Serial.println(gpsPowerEnabled ? "Yes" : "No");
+
+        if (!gpsPowerEnabled)
+        {
+            Serial.println(F("Enabling GPS"));
+            gsm.enableGps(true);
+        }
+
+        // auto gpsStatus = gsm.getGpsStatus();
+        // Serial.print(F("GPS status: "));
+        // Serial.println(static_cast<int>(gpsStatus));
         gsm.printGpsLocationInfo(gsm.getGpsLocationInfo(), Serial);
-        auto gpsStatus = gsm.getGpsStatus();
-        Serial.print(F("GPS status: "));
-        Serial.println(static_cast<int>(gpsStatus));
         lastGpsRequestedAt = millis();
+        Serial.println("Done sequence");
     }
 }

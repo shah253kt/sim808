@@ -8,8 +8,8 @@
 namespace
 {
     constexpr auto COMMAND_LENGTH = 20;
-    constexpr auto RESPONSE_LENGTH = 110;
-    constexpr auto RESPONSE_TIMEOUT_MS = 3000;
+    constexpr auto RESPONSE_LENGTH = 125;
+    constexpr auto RESPONSE_TIMEOUT_MS = 1000;
     constexpr auto POWER_CYCLE_INTERVAL_MS = 3000;
 }
 
@@ -39,9 +39,22 @@ Sim808::Sim808(Stream &stream, uint8_t resetPin, uint8_t powerPin, uint8_t statu
       m_powerPin{powerPin},
       m_statusPin{statusPin}
 {
-    pinMode(m_resetPin, OUTPUT);
-    pinMode(m_powerPin, OUTPUT);
-    pinMode(m_statusPin, INPUT);
+    if (m_resetPin != Sim808Constants::INVALID_PIN)
+    {
+        pinMode(m_resetPin, OUTPUT);
+        digitalWrite(m_resetPin, HIGH);
+    }
+
+    if (m_powerPin != Sim808Constants::INVALID_PIN)
+    {
+        pinMode(m_powerPin, OUTPUT);
+        digitalWrite(m_powerPin, LOW);
+    }
+
+    if (m_statusPin != Sim808Constants::INVALID_PIN)
+    {
+        pinMode(m_statusPin, INPUT);
+    }
 }
 
 Sim808::~Sim808()
@@ -66,27 +79,44 @@ int Sim808::read()
 
 bool Sim808::init()
 {
-    if (m_resetPin != Sim808Constants::INVALID_PIN && m_powerPin != Sim808Constants::INVALID_PIN && m_statusPin != Sim808Constants::INVALID_PIN)
-    {
-        auto tries = 0;
-        digitalWrite(m_resetPin, LOW);
-        delay(1000);
-        digitalWrite(m_resetPin, HIGH);
+    reset();
+    delay(1000);
+    powerCycle();
+    auto tries = 0;
 
-        while (tries++ < 2 && digitalRead(m_statusPin) == LOW)
-        {
-            digitalWrite(m_powerPin, LOW);
-            delay(1000);
-            digitalWrite(m_powerPin, HIGH);
-            delay(1000);
-            digitalWrite(m_powerPin, LOW);
-            delay(3000);
-        }
+    while (tries++ < 2 && !isAlive())
+    {
+        powerCycle();
     }
 
     char command[COMMAND_LENGTH];
     strcpy(command, "AT\n");
     return sendCommandExpectingResponse(command);
+}
+
+void Sim808::reset()
+{
+    if (m_resetPin == Sim808Constants::INVALID_PIN)
+    {
+        return;
+    }
+
+    digitalWrite(m_resetPin, LOW);
+    delay(1000);
+    digitalWrite(m_resetPin, HIGH);
+}
+
+void Sim808::powerCycle()
+{
+    if (m_powerPin == Sim808Constants::INVALID_PIN)
+    {
+        return;
+    }
+
+    digitalWrite(m_powerPin, HIGH);
+    delay(2000);
+    digitalWrite(m_powerPin, LOW);
+    delay(1000);
 }
 
 bool Sim808::isAlive()
@@ -101,12 +131,7 @@ bool Sim808::isAlive()
 
 void Sim808::keepAlive()
 {
-    if (m_resetPin == Sim808Constants::INVALID_PIN || m_powerPin == Sim808Constants::INVALID_PIN || m_statusPin == Sim808Constants::INVALID_PIN)
-    {
-        return;
-    }
-
-    if (digitalRead(m_statusPin) == HIGH)
+    if (isAlive())
     {
         return;
     }
@@ -143,6 +168,13 @@ bool Sim808::sendSms(char *phoneNumber, char *message)
     m_stream->print(message);
     m_stream->print('\x1A'); // Ctrl-Z
     return true;
+}
+
+bool Sim808::isGpsEnabled()
+{
+    char command[COMMAND_LENGTH];
+    strcpy(command, "AT+CGPSPWR?\n");
+    return sendCommandExpectingResponse(command, "+CGPSPWR: 1");
 }
 
 bool Sim808::enableGps(const bool enable)
@@ -321,6 +353,7 @@ void Sim808::clearBuffer()
 {
     while (available())
     {
-        read();
+        m_response[m_currentResponseIndex++] = read();
+        m_response[m_currentResponseIndex] = '\0';
     }
 }

@@ -1,8 +1,6 @@
 #include "Sim808.h"
 #include "GpsLocationInfo.h"
 
-#include <Arduino.h>
-
 constexpr auto POWER = 2;
 constexpr auto RESET = 3;
 constexpr auto STATUS = 4;
@@ -15,6 +13,7 @@ void setup()
     Serial3.begin(9600);
 
     Serial.println("Initializing...");
+
     if (!gsm.init())
     {
         Serial.println(F("Failed to initialize GSM"));
@@ -30,33 +29,7 @@ void setup()
 
 void loop()
 {
-    // gsm.keepAlive();
-
-    if (Serial.available())
-    {
-        Serial3.write(Serial.read());
-        // char c = Serial.read();
-
-        // switch (c)
-        // {
-        // case 's':
-        // {
-        //     if (!gsm.isAlive())
-        //     {
-        //         break;
-        //     }
-
-        //     gsm.sendSms("+60123456789", "Hello!");
-        //     break;
-        // }
-        // }
-    }
-
-    if (Serial3.available())
-    {
-        Serial.write(Serial3.read());
-    }
-
+    gsm.sendSms("+60123456789", "Hello!");
     static auto lastGpsRequestedAt = millis();
 
     if (millis() - lastGpsRequestedAt >= 3000)
@@ -99,6 +72,5 @@ void loop()
 
         gsm.printGpsLocationInfo(gsm.getGpsLocationInfo(), Serial);
         lastGpsRequestedAt = millis();
-        Serial.println("Done sequence");
     }
 }

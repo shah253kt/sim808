@@ -9,7 +9,7 @@ namespace
 {
     constexpr auto COMMAND_LENGTH = 20;
     constexpr auto RESPONSE_LENGTH = 125;
-    constexpr auto RESPONSE_TIMEOUT_MS = 1000;
+    constexpr auto RESPONSE_TIMEOUT_MS = 200;
     constexpr auto POWER_CYCLE_INTERVAL_MS = 3000;
 }
 

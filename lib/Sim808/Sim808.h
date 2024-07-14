@@ -67,4 +67,9 @@ private:
     void resetResponse();
     bool isResponseFull();
     void clearBuffer();
+
+    /// @brief Convert GPS coordinate to decimal degrees.
+    /// @param coordinate Coordinate in ddmm.mmm format
+    /// @return Coordinate in dd.ddddd format
+    float convertCoordinate(float coordinate);
 };

@@ -21,8 +21,8 @@ namespace Regex
 namespace ResponseIndex
 {
     constexpr auto MODE = 0;
-    constexpr auto LONGITUDE = 1;
-    constexpr auto LATITUDE = 2;
+    constexpr auto LATITUDE = 1;
+    constexpr auto LONGITUDE = 2;
     constexpr auto ALTITUDE = 3;
     constexpr auto UTC_TIME = 4;
     constexpr auto TIME_TO_FIRST_FIX = 5;
@@ -249,10 +249,10 @@ GpsLocationInfo Sim808::getGpsLocationInfo()
 
         if (ms.Match(Regex::GPS_LOCATION_INFO_RESPONSE) > 0)
         {
-            ms.GetCapture(buffer, ResponseIndex::LONGITUDE);
-            locationInfo.longitute = atof(buffer);
             ms.GetCapture(buffer, ResponseIndex::LATITUDE);
-            locationInfo.latitude = atof(buffer);
+            locationInfo.latitude = convertCoordinate(atof(buffer));
+            ms.GetCapture(buffer, ResponseIndex::LONGITUDE);
+            locationInfo.longitute = convertCoordinate(atof(buffer));
             ms.GetCapture(buffer, ResponseIndex::ALTITUDE);
             locationInfo.altitude = atof(buffer);
             ms.GetCapture(buffer, ResponseIndex::UTC_TIME);
@@ -374,4 +374,11 @@ void Sim808::clearBuffer()
         m_response[m_currentResponseIndex++] = read();
         m_response[m_currentResponseIndex] = '\0';
     }
+}
+
+float Sim808::convertCoordinate(const float coordinate)
+{
+    auto degrees = (int) coordinate / 100;
+    auto minutes = coordinate - (degrees * 100);
+    return degrees + (minutes / 60.0f);
 }

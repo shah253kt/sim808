@@ -11,4 +11,15 @@ struct GpsLocationInfo
     uint16_t satelliteInView{0};
     float speedOverGround{0.0};
     float courseOverGround{0.0};
+
+    void clone(const GpsLocationInfo &other)
+    {
+        latitude = other.latitude;
+        longitute = other.longitute;
+        altitude = other.altitude;
+        utcTime = other.utcTime;
+        satelliteInView = other.satelliteInView;
+        speedOverGround = other.speedOverGround;
+        courseOverGround = other.courseOverGround;
+    }
 };

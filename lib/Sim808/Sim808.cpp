@@ -183,9 +183,9 @@ bool Sim808::sendSms(char *phoneNumber, char *message)
         return false;
     }
 
-    m_stream->print(message);
-    m_stream->print('\x1A'); // Ctrl-Z
-    return true;
+    char messageToSend[strlen(message) + 2];
+    sprintf(messageToSend, "%s%c\n", message, '\x1A'); // Ends with Ctrl-Z
+    return sendCommandExpectingResponse(messageToSend);
 }
 
 bool Sim808::isGpsEnabled()

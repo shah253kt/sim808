@@ -35,7 +35,7 @@ struct UtcTime
         char buffer[YEAR_LENGTH + 1];
         strncpy(buffer, utcTime + YEAR_INDEX, YEAR_LENGTH);
         buffer[YEAR_LENGTH] = '\0';
-        timeElements.Year = atoi(buffer);
+        timeElements.Year = atoi(buffer) - 1970;
         strncpy(buffer, utcTime + MONTH_INDEX, MONTH_LENGTH);
         buffer[MONTH_LENGTH] = '\0';
         timeElements.Month = atoi(buffer);
@@ -55,14 +55,11 @@ struct UtcTime
 
     void print(Stream &stream) const
     {
+        const auto utc = makeTime(timeElements);
         char format[40];
         sprintf(format, "Date and time: %02d/%02d/%04d %02d:%02d:%02d",
-                timeElements.Day,
-                timeElements.Month,
-                timeElements.Year,
-                timeElements.Hour,
-                timeElements.Minute,
-                timeElements.Second);
+                day(utc), month(utc), year(utc),
+                hour(utc), minute(utc), second(utc));
         stream.println(format);
     }
 

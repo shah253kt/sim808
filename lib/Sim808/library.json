@@ -1,6 +1,6 @@
 {
     "name": "SIM808",
-    "version": "1.1.6",
+    "version": "1.1.7",
     "description": "Handles communication and communication of SIM808 module.",
     "keywords": "sim808,callback,at command",
     "repository": {
@@ -20,6 +20,7 @@
     "platforms": "*",
     "dependencies":
     {
-        "nickgammon/Regexp": "^0.1.0"
+        "nickgammon/Regexp": "^0.1.0",
+        "paulstoffregen/Time": "^1.6.1"
     }
 }

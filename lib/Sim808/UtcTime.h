@@ -2,6 +2,8 @@
 
 #include "Arduino.h"
 
+#include "TimeLib.h"
+
 namespace
 {
     constexpr char UTC_TIME_FORMAT[] = "yyyymmddHHMMSS.SSS"; // Example: 20240630115106.000: 2024/06/30 11:51:06
@@ -21,12 +23,7 @@ namespace
 
 struct UtcTime
 {
-    uint8_t day{1};
-    uint8_t month{1};
-    uint16_t year{2024};
-    uint8_t hour{0};
-    uint8_t minute{0};
-    uint8_t second{0};
+    TimeElements timeElements;
 
     void parse(char *utcTime)
     {
@@ -38,38 +35,64 @@ struct UtcTime
         char buffer[YEAR_LENGTH + 1];
         strncpy(buffer, utcTime + YEAR_INDEX, YEAR_LENGTH);
         buffer[YEAR_LENGTH] = '\0';
-        year = atoi(buffer);
+        timeElements.Year = atoi(buffer);
         strncpy(buffer, utcTime + MONTH_INDEX, MONTH_LENGTH);
         buffer[MONTH_LENGTH] = '\0';
-        month = atoi(buffer);
+        timeElements.Month = atoi(buffer);
         strncpy(buffer, utcTime + DAY_INDEX, DAY_LENGTH);
         buffer[DAY_LENGTH] = '\0';
-        day = atoi(buffer);
+        timeElements.Day = atoi(buffer);
         strncpy(buffer, utcTime + HOUR_INDEX, HOUR_LENGTH);
         buffer[HOUR_LENGTH] = '\0';
-        hour = atoi(buffer);
+        timeElements.Hour = atoi(buffer);
         strncpy(buffer, utcTime + MINUTE_INDEX, MINUTE_LENGTH);
         buffer[MINUTE_LENGTH] = '\0';
-        minute = atoi(buffer);
+        timeElements.Minute = atoi(buffer);
         strncpy(buffer, utcTime + SECOND_INDEX, SECOND_LENGTH);
         buffer[SECOND_LENGTH] = '\0';
-        second = atoi(buffer);
+        timeElements.Second = atoi(buffer);
     }
 
     void print(Stream &stream) const
     {
         char format[40];
-        sprintf(format, "Date and time: %02d/%02d/%04d %02d:%02d:%02d", day, month, year, hour, minute, second);
+        sprintf(format, "Date and time: %02d/%02d/%04d %02d:%02d:%02d",
+                timeElements.Day,
+                timeElements.Month,
+                timeElements.Year,
+                timeElements.Hour,
+                timeElements.Minute,
+                timeElements.Second);
         stream.println(format);
+    }
+
+    void getStrings(char *dateString, char *timeString, int timezonOffset = 0)
+    {
+        auto utc = makeTime(timeElements);
+        utc += constrain(timezonOffset, -11, 12) * 3600;
+        sprintf(dateString, "%02d/%02d/%04d", day(utc), month(utc), year(utc));
+        sprintf(timeString, "%02d:%02d:%02d", hour(utc), minute(utc), second(utc));
+    }
+
+    UtcTime clone()
+    {
+        UtcTime utc;
+        utc.clone(*this);
+        return utc;
+    }
+
+    void clone(const UtcTime &other)
+    {
+        timeElements = other.timeElements;
     }
 
     bool operator==(const UtcTime &other)
     {
-        return day == other.day &&
-               month == other.month &&
-               year == other.year &&
-               hour == other.hour &&
-               minute == other.minute &&
-               second == other.second;
+        return timeElements.Day == other.timeElements.Day &&
+               timeElements.Month == other.timeElements.Month &&
+               timeElements.Year == other.timeElements.Year &&
+               timeElements.Hour == other.timeElements.Hour &&
+               timeElements.Minute == other.timeElements.Minute &&
+               timeElements.Second == other.timeElements.Second;
     }
 };

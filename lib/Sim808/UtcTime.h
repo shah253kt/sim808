@@ -62,4 +62,14 @@ struct UtcTime
         sprintf(format, "Date and time: %02d/%02d/%04d %02d:%02d:%02d", day, month, year, hour, minute, second);
         stream.println(format);
     }
+
+    bool operator==(const UtcTime &other)
+    {
+        return day == other.day &&
+               month == other.month &&
+               year == other.year &&
+               hour == other.hour &&
+               minute == other.minute &&
+               second == other.second;
+    }
 };

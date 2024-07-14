@@ -22,4 +22,15 @@ struct GpsLocationInfo
         speedOverGround = other.speedOverGround;
         courseOverGround = other.courseOverGround;
     }
+
+    bool operator==(const GpsLocationInfo &other)
+    {
+        return latitude == other.latitude &&
+               longitute == other.longitute &&
+               altitude == other.altitude &&
+               utcTime == other.utcTime &&
+               satelliteInView == other.satelliteInView &&
+               speedOverGround == other.speedOverGround &&
+               courseOverGround == other.courseOverGround;
+    }
 };

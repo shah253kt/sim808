@@ -1,6 +1,6 @@
 {
     "name": "SIM808",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "description": "Handles communication and communication of SIM808 module.",
     "keywords": "sim808,callback,at command",
     "repository": {

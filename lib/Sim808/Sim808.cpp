@@ -162,9 +162,27 @@ bool Sim808::sendSms(char *phoneNumber, char *message)
         return false;
     }
 
-    m_stream->print("AT+CMGS=");
+    m_stream->print("AT+CMGS=\"");
     m_stream->print(phoneNumber);
-    m_stream->print('\r');
+    m_stream->print("\"\r");
+
+    const auto sentAt = millis();
+    auto receivedChevron = false;
+
+    while (millis() - sentAt < RESPONSE_TIMEOUT_MS)
+    {
+        if (m_stream->available() && (char)m_stream->read() == '>')
+        {
+            receivedChevron = true;
+            break;
+        }
+    }
+
+    if (!receivedChevron)
+    {
+        return false;
+    }
+
     m_stream->print(message);
     m_stream->print('\x1A'); // Ctrl-Z
     return true;
